@@ -1,0 +1,492 @@
+# AbrovaPush Node.js SDK
+
+Server-side SDK for [AbrovaPush](https://abrova.ir) — push notifications, inbox, in-app messages, and more.
+
+## Installation
+
+The package is published on [Abrova Center](https://center.abrova.ir). Add this line to your project's `.npmrc`:
+
+```ini
+@abrova:registry=https://center.abrova.ir/api/packages/abrova/npm/
+```
+
+Then install:
+
+```bash
+npm install @abrova/push-node
+```
+
+## Quick Start
+
+```typescript
+import { AbrovaPush } from '@abrova/push-node';
+
+const abrovaPush = new AbrovaPush({
+  apiKey: 'ab_live_xxxxxxxxxxxxxxxxxxxxx',
+  serverSecret: 'ab_srv_xxxxxxxxxxxxxxxxxxxxx', // Required for server-side operations
+});
+
+// Send a push notification
+await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  title: 'Order Shipped',
+  body: 'Your order #1234 has been shipped!',
+  data: { orderId: '1234' },
+});
+```
+
+> **Note:** Both `apiKey` and `serverSecret` are required for all server-side SDK operations. You can find these credentials in your [Abrova Console](https://console.abrova.ir) when you create a project.
+
+## Push Notifications
+
+```typescript
+// Send to a specific device
+await abrovaPush.push.sendToDevice({
+  deviceId: 'device-uuid',
+  title: 'Hello',
+  body: 'Welcome to our app!',
+});
+
+// Send to a user (all their devices)
+await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  title: 'New Message',
+  body: 'You have a new message',
+});
+
+// Send to multiple devices
+await abrovaPush.push.sendToDevices({
+  deviceIds: ['device-1', 'device-2', 'device-3'],
+  title: 'Update Available',
+  body: 'A new version is available',
+});
+
+// Send to a topic (e.g., "promotions")
+await abrovaPush.push.sendToTopic({
+  topic: 'promotions',
+  title: 'Flash Sale!',
+  body: '50% off everything today only',
+  imageUrl: 'https://example.com/sale.jpg',
+});
+
+// Send to a segment
+await abrovaPush.push.sendToSegment({
+  segmentId: 'segment-uuid',
+  title: 'Exclusive Offer',
+  body: 'Just for our VIP customers',
+});
+
+// Broadcast to all devices
+await abrovaPush.push.broadcast({
+  title: 'App Update',
+  body: 'Check out the new features!',
+});
+```
+
+### Handling the Response
+
+Every send returns `{ success, failed, reason? }`. When the target had **zero registered devices** the message is not attempted and `reason` is set to `'no_recipients'` — distinct from a real delivery failure:
+
+```typescript
+const result = await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  title: 'Your order shipped',
+  body: 'Track it from the app',
+});
+
+if (result.reason === 'no_recipients') {
+  // User has no device registered with Abrova Push.
+  // Fall back to email / SMS, mark them as push-unreachable, etc.
+} else if (result.failed > 0) {
+  // Real delivery failure on at least one device.
+}
+```
+
+### App Identifier
+
+If your project has multiple apps (e.g. a shopping app and a chat app), use `appIdentifier` to target a specific app. This is the bundle ID / package name of the app (e.g. `com.myapp.ios`).
+
+```typescript
+// Send only to a specific app on the device
+await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  title: 'New Order',
+  body: 'Your order is ready',
+  appIdentifier: 'com.myshop.app', // only this app receives it
+});
+```
+
+> **Note:** `appIdentifier` is optional. If not set, the notification is sent to all apps registered under your project. Most projects have a single app, so you don't need to set it.
+
+### Rich Notifications
+
+```typescript
+await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  title: 'New Product',
+  body: 'Check out our latest arrival',
+  imageUrl: 'https://example.com/product.jpg',
+  actions: [
+    { id: 'buy', title: 'Buy Now', action: 'OPEN_PRODUCT' },
+    { id: 'later', title: 'Save for Later' },
+  ],
+  deepLink: 'myapp://product/123',
+  data: { productId: '123' },
+});
+```
+
+### Using Templates
+
+```typescript
+await abrovaPush.push.sendToUser({
+  userId: 'user-123',
+  templateId: 'order-shipped-template',
+  templateVariables: {
+    orderNumber: '#1234',
+    trackingUrl: 'https://track.example.com/1234',
+  },
+});
+```
+
+## Inbox Messages
+
+```typescript
+// Send inbox message to a user
+await abrovaPush.inbox.sendToUser({
+  userId: 'user-123',
+  content: {
+    title: 'Welcome!',
+    body: 'Thanks for joining us.',
+    imageUrl: 'https://example.com/welcome.jpg',
+    deepLink: 'myapp://onboarding',
+  },
+});
+
+// Send to multiple users
+await abrovaPush.inbox.sendToUsers({
+  userIds: ['user-1', 'user-2', 'user-3'],
+  content: {
+    title: 'New Feature',
+    body: 'Check out our latest feature',
+  },
+});
+
+// Send to a specific app only
+await abrovaPush.inbox.sendToUser({
+  userId: 'user-123',
+  appIdentifier: 'com.myshop.app',
+  content: {
+    title: 'Order Update',
+    body: 'Your order has shipped',
+  },
+});
+
+// Broadcast to all
+await abrovaPush.inbox.broadcast({
+  content: {
+    title: 'Holiday Sale',
+    body: 'Up to 70% off!',
+  },
+  expiresAt: '2025-12-31T23:59:59Z',
+});
+```
+
+## Device Management
+
+```typescript
+// List all devices
+const devices = await abrovaPush.devices.list();
+
+// Subscribe a device to a topic
+await abrovaPush.devices.subscribeTopic('device-uuid', 'news');
+
+// Unsubscribe from a topic
+await abrovaPush.devices.unsubscribeTopic('device-uuid', 'news');
+
+// Associate device with a user
+await abrovaPush.devices.setUserId('device-uuid', 'user-123');
+
+// Delete a device
+await abrovaPush.devices.delete('device-uuid');
+
+// Paginated, filtered list (includes inactive devices unless isActive is set)
+const { items, total } = await abrovaPush.devices.listPage({
+  platform: 'web',
+  sdkName: 'web',
+  isActive: true,
+  page: 1,
+  limit: 50,
+});
+console.log(items[0]?.sdkName, items[0]?.sdkVersion, items[0]?.appVersion, items[0]?.updatedAt);
+
+// Values you can filter on (app versions, SDK versions, failure reasons)
+const options = await abrovaPush.devices.filterOptions();
+
+// Soft-unregister (stops sends, keeps history) and undo it
+await abrovaPush.devices.unregister('device-uuid');
+await abrovaPush.devices.reactivate('device-uuid');
+```
+
+`list()` is unchanged and still returns a plain array of active devices.
+
+## Delivery Receipts
+
+A send's `success` count means the push service *accepted* the notification.
+Receipts show what happened per device.
+
+```typescript
+const { messageId } = await abrovaPush.push.sendToUser({ userId: 'user-123', title: 'Hi', body: 'Hello' });
+const receipts = await abrovaPush.receipts.getForMessage(messageId!);
+
+// Paginated receipt log with filters
+const { items } = await abrovaPush.receipts.list({ status: 'failed', platform: 'ios', page: 1, limit: 100 });
+
+// Delivery analytics (default range: last 30 days)
+const analytics = await abrovaPush.receipts.analytics({
+  startDate: new Date(Date.now() - 7 * 86400_000),
+  endDate: new Date(),
+  bucket: 'day',
+});
+console.log(analytics.totals.deliveryRate, analytics.topFailureReasons);
+```
+
+## Templates
+
+```typescript
+// Create a template
+const template = await abrovaPush.templates.create({
+  name: 'Order Shipped',
+  title: 'Your order {{orderNumber}} has shipped!',
+  body: 'Track your package: {{trackingUrl}}',
+  variables: ['orderNumber', 'trackingUrl'],
+});
+
+// List templates
+const templates = await abrovaPush.templates.list();
+
+// Render a template (preview)
+const rendered = await abrovaPush.templates.render(template.id, {
+  orderNumber: '#1234',
+  trackingUrl: 'https://track.example.com/1234',
+});
+```
+
+## Segments
+
+```typescript
+// Create a segment
+const segment = await abrovaPush.segments.create({
+  name: 'VIP Customers',
+  description: 'Customers with more than 10 orders',
+  filters: [
+    { field: 'metadata.orders', operator: 'gt', value: 10 },
+  ],
+});
+
+// Get devices in a segment
+const devices = await abrovaPush.segments.getDevices(segment.id);
+
+// Recalculate segment membership
+await abrovaPush.segments.recalculate(segment.id);
+```
+
+## Scheduled Messages
+
+```typescript
+// Schedule a message
+const scheduled = await abrovaPush.scheduled.create({
+  title: 'Reminder',
+  body: 'Don\'t forget to complete your purchase!',
+  targetType: 'user',
+  targetValue: 'user-123',
+  scheduledAt: '2025-02-14T09:00:00Z',
+  timezone: 'America/New_York',
+});
+
+// List pending messages
+const pending = await abrovaPush.scheduled.listPending();
+
+// Cancel a scheduled message
+await abrovaPush.scheduled.cancel(scheduled.id);
+```
+
+## Webhooks
+
+```typescript
+// Create a webhook
+const webhook = await abrovaPush.webhooks.create({
+  name: 'Order Events',
+  url: 'https://example.com/webhooks/abrova-push',
+  events: [
+    'message.sent',
+    'message.delivered',
+    'message.failed',
+    'message.no_recipients',
+    'message.opened',
+    'message.clicked',
+  ],
+  secret: 'my-secret-key',
+});
+
+// Test a webhook
+await abrovaPush.webhooks.test(webhook.id, 'message.opened');
+
+// Get delivery logs
+const logs = await abrovaPush.webhooks.getLogs(webhook.id);
+```
+
+## Analytics
+
+```typescript
+// Get overview stats
+const overview = await abrovaPush.analytics.getOverview();
+console.log(`Delivery rate: ${overview.deliveryRate}%`);
+
+// Get daily stats
+const daily = await abrovaPush.analytics.getDaily(30); // Last 30 days
+
+// Get app stats
+const stats = await abrovaPush.analytics.getStats();
+console.log(`Total devices: ${stats.totalDevices}`);
+```
+
+## A/B Testing
+
+```typescript
+// Create an A/B test
+const test = await abrovaPush.abTesting.create({
+  appId: 'your-app-id',
+  name: 'Notification Copy Test',
+  variants: [
+    {
+      name: 'Control',
+      title: 'Check this out',
+      body: 'See what\'s new',
+      trafficPercentage: 50,
+    },
+    {
+      name: 'Urgency',
+      title: 'Don\'t miss out!',
+      body: 'Limited time offer',
+      trafficPercentage: 50,
+    },
+  ],
+});
+
+// Start the test
+await abrovaPush.abTesting.start(test.id);
+
+// Get results
+const results = await abrovaPush.abTesting.getResults(test.id);
+```
+
+## In-App Messages
+
+```typescript
+// Create an in-app message
+const message = await abrovaPush.inApp.create('your-app-id', {
+  name: 'Welcome Modal',
+  type: 'modal',
+  content: {
+    title: 'Welcome!',
+    body: 'Thanks for downloading our app',
+    imageUrl: 'https://example.com/welcome.jpg',
+    buttons: [
+      { id: 'start', text: 'Get Started', action: 'dismiss', style: 'primary' },
+    ],
+  },
+  triggerType: 'on_app_open',
+  maxImpressions: 1,
+});
+
+// Activate the message
+await abrovaPush.inApp.activate('your-app-id', message.id);
+```
+
+## Error Handling
+
+```typescript
+import { AbrovaPush, AbrovaPushError } from '@abrova/push-node';
+
+try {
+  await abrovaPush.push.sendToUser({
+    userId: 'user-123',
+    title: 'Hello',
+    body: 'World',
+  });
+} catch (error) {
+  if (error instanceof AbrovaPushError) {
+    console.error(`Status: ${error.statusCode}`);
+    console.error(`Message: ${error.message}`);
+    console.error(`Response:`, error.response);
+  }
+}
+```
+
+### Rate Limits
+
+If you send faster than your project's limits allow, the API answers `429 Too Many Requests` with a `Retry-After` header. The SDK waits that long and retries the request (up to 2 times by default). If the limit is still reached, the `AbrovaPushError` has `statusCode` 429 and `retryAfter`, the number of seconds to wait:
+
+```typescript
+try {
+  await abrovaPush.push.sendToDevice({ deviceId: 'device-123', title: 'Hello', body: 'World' });
+} catch (error) {
+  if (error instanceof AbrovaPushError && error.statusCode === 429) {
+    console.log(`Rate limited, try again in ${error.retryAfter ?? 1}s`);
+  }
+}
+```
+
+Sends to one device are limited per device (240 per minute, 5,000 per hour); to reach many devices, use a topic, segment, user or broadcast send.
+
+## Configuration
+
+```typescript
+const abrovaPush = new AbrovaPush({
+  apiKey: 'ab_live_xxxxxxxxxxxxxxxxxxxxx',        // Required - from Abrova Console
+  serverSecret: 'ab_srv_xxxxxxxxxxxxxxxxxxxxx',   // Required - from Abrova Console
+});
+```
+
+Optional settings:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `maxRateLimitRetries` | `2` | Retries of a rate-limited (429) request, after the wait in `Retry-After`. `0` turns retrying off. |
+| `maxRetryWaitMs` | `60000` | Longest wait before a retry. If the API asks for a longer wait, the error is thrown right away. |
+
+### Environment Variables
+
+We recommend using environment variables to store your credentials:
+
+```typescript
+const abrovaPush = new AbrovaPush({
+  apiKey: process.env.ABROVA_API_KEY!,
+  serverSecret: process.env.ABROVA_SERVER_SECRET!,
+});
+```
+
+```bash
+# .env
+ABROVA_API_KEY=ab_live_xxxxxxxxxxxxxxxxxxxxx
+ABROVA_SERVER_SECRET=ab_srv_xxxxxxxxxxxxxxxxxxxxx
+```
+
+### Credentials
+
+| Credential | Format | Description |
+|------------|--------|-------------|
+| **API Key** | `ab_live_xxx` | Used for client-side SDKs (iOS, Android, Web) and server-side SDKs |
+| **Server Secret** | `ab_srv_xxx` | **Required** for server-side operations. Never expose in client-side code. |
+
+Both credentials are generated when you create a project in the [Abrova Console](https://console.abrova.ir). Store them securely and never commit them to version control.
+
+## Links
+
+- [Abrova Push](https://abrova.ir/cloud/abrova-push) - Learn more about Abrova Push
+- [Documentation](https://abrova.ir/cloud/abrova-push/docs/quick-start) - Full documentation and guides
+- [Abrova Console](https://console.abrova.ir) - Manage your push notifications
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.

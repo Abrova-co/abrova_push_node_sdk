@@ -1,0 +1,40 @@
+{
+  "name": "@abrova/push-node",
+  "version": "0.1.6",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Abrova-co/abrova_push_node_sdk.git"
+  },
+  "homepage": "https://abrova.ir/cloud/abrova-push",
+  "bugs": {
+    "url": "https://github.com/Abrova-co/abrova_push_node_sdk/issues"
+  },
+  "description": "AbrovaPush Node.js SDK — server-side push notifications, inbox, in-app messages, and more",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/gen-version.mjs",
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "abrova-push",
+    "push-notifications",
+    "notifications",
+    "inbox",
+    "in-app-messages"
+  ],
+  "author": "Abrova <support@abrova.ir>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
+  }
+}
