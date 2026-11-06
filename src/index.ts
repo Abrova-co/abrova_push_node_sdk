@@ -10,6 +10,7 @@ import { ABTesting } from './modules/ab-testing';
 import { Webhooks } from './modules/webhooks';
 import { Analytics } from './modules/analytics';
 import { Receipts } from './modules/receipts';
+import { Channels } from './modules/channels';
 import { AbrovaPushConfig } from './types';
 
 export class AbrovaPush {
@@ -46,6 +47,8 @@ export class AbrovaPush {
   public analytics: Analytics;
   /** Per-device delivery receipts for messages you have sent. */
   public receipts: Receipts;
+  /** Notification channels (importance, vibration, sound per kind of message) */
+  public channels: Channels;
 
   constructor(config: AbrovaPushConfig) {
     this.client = new HttpClient(config);
@@ -60,6 +63,7 @@ export class AbrovaPush {
     this.webhooks = new Webhooks(this.client);
     this.analytics = new Analytics(this.client);
     this.receipts = new Receipts(this.client);
+    this.channels = new Channels(this.client);
   }
 }
 

@@ -234,6 +234,11 @@ export interface SendPushOptions {
   campaignId?: string;
   /** Optional app identifier to scope delivery to a specific app on the same device */
   appIdentifier?: string;
+  /**
+   * Notification channel key from the Console (for example `orders`), or the id of an Android channel your app
+   * creates itself. Sets importance, vibration and sound on the phone.
+   */
+  channelId?: string;
 }
 
 export interface SendToDeviceOptions extends SendPushOptions {
@@ -254,6 +259,46 @@ export interface SendToTopicOptions extends SendPushOptions {
 
 export interface SendToSegmentOptions extends SendPushOptions {
   segmentId: string;
+}
+
+// ─── Channels ────────────────────────────────────────────────────
+
+export type ChannelImportance = 'high' | 'default' | 'low';
+export type IosInterruptionLevel = 'passive' | 'active' | 'time-sensitive';
+
+export interface CreateChannelOptions {
+  /** What you send as channelId: lowercase letters, digits, _ and -. Can't be changed later. */
+  key: string;
+  nameEn: string;
+  nameFa?: string;
+  descriptionEn?: string;
+  descriptionFa?: string;
+  importance?: ChannelImportance;
+  vibrate?: boolean;
+  /** `default`, `none`, or the name of a sound file in the app. */
+  sound?: string;
+  /** null = automatic (low → passive, otherwise active). */
+  iosInterruptionLevel?: IosInterruptionLevel | null;
+}
+
+export interface UpdateChannelOptions extends Partial<Omit<CreateChannelOptions, 'key'>> {}
+
+export interface NotificationChannel {
+  key: string;
+  nameEn: string;
+  nameFa: string | null;
+  descriptionEn: string | null;
+  descriptionFa: string | null;
+  importance: ChannelImportance;
+  vibrate: boolean;
+  sound: string;
+  iosInterruptionLevel: IosInterruptionLevel | null;
+  /** The interruption level iOS gets. */
+  ios: IosInterruptionLevel;
+  /** Goes up when importance, vibration or sound change (phones then replace the channel). */
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Devices ─────────────────────────────────────────────────────
@@ -398,6 +443,8 @@ export interface CreateScheduledOptions {
   targetValue?: string;
   scheduledAt: string;
   timezone?: string;
+  /** Notification channel key, as in `SendPushOptions.channelId`. */
+  channelId?: string;
 }
 
 export interface UpdateScheduledOptions extends Partial<CreateScheduledOptions> {}

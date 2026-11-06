@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7
+
+- Added: `channelId` on every send option and on scheduled sends, so a message can pick a notification channel.
+- Added: `channels.list()`, `channels.create()`, `channels.update()` and `channels.delete()` to manage notification channels from your server.
+
 ## 0.1.6
 
 - Rate limits: when the API answers `429 Too Many Requests`, the request is retried after the wait it gives in `Retry-After` (up to 2 retries by default). New optional config: `maxRateLimitRetries` (0 turns retrying off) and `maxRetryWaitMs` (default 60000; a longer requested wait is not waited for). If the limit is still reached, the `AbrovaPushError` (status 429) now carries `retryAfter` in seconds.
