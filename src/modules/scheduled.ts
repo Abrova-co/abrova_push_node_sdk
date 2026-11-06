@@ -1,6 +1,11 @@
 import { HttpClient } from '../client';
 import { ScheduledMessage, CreateScheduledOptions, UpdateScheduledOptions } from '../types';
 
+/** The API calls "every device" `broadcast`; older SDK types said `all`. */
+function withApiTarget<T extends { targetType?: string }>(options: T): T {
+  return options.targetType === 'all' ? { ...options, targetType: 'broadcast' } : options;
+}
+
 export class Scheduled {
   constructor(private client: HttpClient) {}
 
@@ -8,7 +13,7 @@ export class Scheduled {
    * Schedule a new message.
    */
   async create(options: CreateScheduledOptions): Promise<ScheduledMessage> {
-    return this.client.post<ScheduledMessage>('/scheduled', options);
+    return this.client.post<ScheduledMessage>('/scheduled', withApiTarget(options));
   }
 
   /**
@@ -36,7 +41,7 @@ export class Scheduled {
    * Update a scheduled message.
    */
   async update(id: string, options: UpdateScheduledOptions): Promise<ScheduledMessage> {
-    return this.client.put<ScheduledMessage>(`/scheduled/${id}`, options);
+    return this.client.put<ScheduledMessage>(`/scheduled/${id}`, withApiTarget(options));
   }
 
   /**

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8
+
+- Fixed: `scheduled.create()` / `update()` types now list every message field a send-now takes, plus `targetValues`. `targetType: 'broadcast'` is in the type; `'all'`, which the API rejected, is sent as `broadcast`.
+
 ## 0.1.7
 
 - Added: `channelId` on every send option and on scheduled sends, so a message can pick a notification channel.

@@ -435,16 +435,21 @@ export interface SegmentPreviewResult {
 
 // ─── Scheduled ───────────────────────────────────────────────────
 
-export interface CreateScheduledOptions {
-  title: string;
-  body: string;
-  data?: Record<string, any>;
-  targetType: 'all' | 'user' | 'device' | 'topic' | 'segment';
+/**
+ * A scheduled send carries the same message as a send-now (every `SendPushOptions` field: image, buttons,
+ * deep link, sound, channelId, template, …) plus who receives it and when.
+ */
+export interface CreateScheduledOptions extends SendPushOptions {
+  /** `broadcast` sends to every device. `all` is accepted as another name for it. */
+  targetType: 'broadcast' | 'all' | 'user' | 'device' | 'topic' | 'segment';
+  /** Install id, user id, topic name or segment id. */
   targetValue?: string;
+  /** Several user ids (targetType user) or install ids (targetType device), up to 1000. */
+  targetValues?: string[];
+  /** The send time as an ISO instant. */
   scheduledAt: string;
+  /** IANA zone the schedule was written in (shown in the Console). */
   timezone?: string;
-  /** Notification channel key, as in `SendPushOptions.channelId`. */
-  channelId?: string;
 }
 
 export interface UpdateScheduledOptions extends Partial<CreateScheduledOptions> {}
