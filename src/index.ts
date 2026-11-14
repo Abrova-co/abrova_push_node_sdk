@@ -69,6 +69,8 @@ export class AbrovaPush {
 
 export { AbrovaPushError } from './client';
 export { SDK_NAME, SDK_VERSION } from './version';
+export { conversationData } from './conversation';
+export type { ConversationOptions } from './conversation';
 
 // Re-export types
 export * from './types';

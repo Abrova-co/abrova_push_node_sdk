@@ -148,6 +148,27 @@ await abrovaPush.push.sendToUser({
 });
 ```
 
+### Conversation Notifications
+
+`conversationData()` returns the `data` keys that make the Abrova Push SDKs show a message chat-style (the sender's
+photo, one conversation together):
+
+```typescript
+import { conversationData } from '@abrova/push-node';
+
+await push.send({
+  userId: 'u-kian',
+  title: '@ali',
+  body: 'Is the bike still available?',
+  data: {
+    ...conversationData({ id: 'room-1', senderName: '@ali', senderId: 'u-ali', senderAvatarUrl: 'https://cdn.example/ali.jpg' }),
+    roomId: 'room-1',
+  },
+});
+```
+
+For a group add `isGroup: true` and `title: 'Family'`. Guide: https://abrova.ir/docs/push/conversation-notifications
+
 ## Inbox Messages
 
 ```typescript

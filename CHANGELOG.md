@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- Added: `conversationData({ id, senderName, senderId?, senderAvatarUrl?, title?, isGroup? })` returns the `data` keys that make the Abrova Push SDKs show a message chat-style (sender photo, one conversation together).
+
 ## 0.1.8
 
 - Fixed: `scheduled.create()` / `update()` types now list every message field a send-now takes, plus `targetValues`. `targetType: 'broadcast'` is in the type; `'all'`, which the API rejected, is sent as `broadcast`.
